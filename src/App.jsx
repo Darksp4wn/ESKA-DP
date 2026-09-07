@@ -683,11 +683,6 @@ function EmployeeFormModal({ departments, areas, onClose, onSubmit }) {
       return;
     }
 
-    if (formData.department_ids.length === 0) {
-      setFormError('Bitte wählen Sie mindestens eine Abteilung aus.');
-      return;
-    }
-
     setSaving(true);
     const success = await onSubmit(formData);
     setSaving(false);
@@ -875,7 +870,11 @@ function EmployeeFormModal({ departments, areas, onClose, onSubmit }) {
           </div>
 
           <div className="form-section">
-            <h4>Abteilungen *</h4>
+            <h4>Abteilungen</h4>
+            <p className="form-help">
+              Eine Zuordnung ist optional. Mitarbeiter aus separaten Einsatzbereichen
+              können ohne Abteilung angelegt werden.
+            </p>
 
             <div className="checkbox-grid">
               {departments.map((department) => (
@@ -895,7 +894,10 @@ function EmployeeFormModal({ departments, areas, onClose, onSubmit }) {
 
           <div className="form-section">
             <h4>Separate Einsatzbereiche</h4>
-
+            <p className="form-help">
+            Hausmeister, Putzkräfte, Deko, Buchhaltung und Geschäftsführung werden
+            unabhängig von den Abteilungen verwaltet.
+            </p>
             <div className="checkbox-grid">
               {areas.map((area) => (
                 <label className="checkbox-label" key={area.id}>
