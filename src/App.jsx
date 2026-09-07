@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import SchedulePage from './pages/SchedulePage';
 import AbsencePage from './pages/AbsencePage';
+import AbsenceCalendarPage from './pages/AbsenceCalendarPage';
 
 const navigation = [
   { id: 'dashboard', label: 'Dashboard', icon: '⌂' },
   { id: 'employees', label: 'Mitarbeiter', icon: '👥' },
   { id: 'schedule', label: 'Dienstplan', icon: '▦' },
   { id: 'absence', label: 'Urlaub & Abwesenheit', icon: '◫' },
+  { id: 'absence-calendar', label: 'Abwesenheitskalender', icon: '▣' },
   { id: 'overtime', label: 'Überstunden', icon: '◷' },
   { id: 'reports', label: 'Auswertungen', icon: '▥' },
   { id: 'settings', label: 'Einstellungen', icon: '⚙' }
@@ -139,13 +141,14 @@ function App() {
           )}
 
           {activePage === 'employees' && <EmployeesPage />}
-
+          {activePage === 'absence-calendar' && <AbsenceCalendarPage />}
           {activePage === 'schedule' && <SchedulePage />}
           {activePage === 'absence' && <AbsencePage />}
 
           {activePage !== 'dashboard' &&
             activePage !== 'employees' &&
             activePage !== 'absence' &&
+             activePage !== 'absence-calendar' &&
             activePage !== 'schedule' && (
               <PlaceholderPage page={activePage} />
             )}
