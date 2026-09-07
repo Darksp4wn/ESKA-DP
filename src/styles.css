@@ -35,7 +35,7 @@ button {
 .sidebar {
   width: 270px;
   min-height: 100vh;
-  background: #0d2d63;
+  background: #145782;
   color: white;
   display: flex;
   flex-direction: column;
@@ -96,7 +96,7 @@ button {
 .nav-item:hover,
 .nav-item.active {
   color: white;
-  background: #17498f;
+  background: #17679f;
 }
 
 .nav-item span {
@@ -352,7 +352,7 @@ button {
   margin-bottom: 7px;
   border-radius: 14px;
   color: #1971b5;
-  background: #edf4ff;
+  background: #eaf4fa;
   font-size: 22px;
 }
 
@@ -447,7 +447,7 @@ td {
 .login-page {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #0d2d63, #1971b5);
+  background: linear-gradient(135deg, #145782, #1971b5);
 }
 
 .login-card {
@@ -462,7 +462,7 @@ td {
 
 .login-logo {
   margin-bottom: 24px;
-  background: #edf4ff;
+  background: #eaf4fa;
 }
 
 .login-card h1 {
