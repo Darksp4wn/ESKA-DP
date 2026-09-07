@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
+import SchedulePage from './pages/SchedulePage';
 
 const navigation = [
   { id: 'dashboard', label: 'Dashboard', icon: '⌂' },
@@ -138,9 +139,13 @@ function App() {
 
           {activePage === 'employees' && <EmployeesPage />}
 
-          {activePage !== 'dashboard' && activePage !== 'employees' && (
-            <PlaceholderPage page={activePage} />
-          )}
+          {activePage === 'schedule' && <SchedulePage />}
+
+          {activePage !== 'dashboard' &&
+            activePage !== 'employees' &&
+            activePage !== 'schedule' && (
+              <PlaceholderPage page={activePage} />
+            )}
         </section>
       </main>
     </div>
