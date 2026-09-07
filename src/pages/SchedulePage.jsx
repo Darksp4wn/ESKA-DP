@@ -311,7 +311,16 @@ const areaOverview = areas.map((area) => {
       });
 
     if (shiftError) {
-      setError(`Schicht konnte nicht gespeichert werden: ${shiftError.message}`);
+      if (shiftError.code === '23P01') {
+        setError(
+          'Diese Schicht überschneidet sich mit einer bereits geplanten Schicht dieses Mitarbeiters.'
+        );
+      } else {
+        setError(
+          `Schicht konnte nicht gespeichert werden: ${shiftError.message}`
+        );
+      }
+    
       setSaving(false);
       return;
     }
