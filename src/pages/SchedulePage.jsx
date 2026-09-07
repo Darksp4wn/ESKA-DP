@@ -73,6 +73,11 @@ export default function SchedulePage() {
   );
 
   const [showForm, setShowForm] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState({
+  type: 'all',
+  id: null,
+  name: 'Alle Bereiche'
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -84,9 +89,56 @@ export default function SchedulePage() {
     });
   }, [weekStart]);
 
-  const selectedShifts = shifts.filter(
-    (shift) => shift.plan_date === selectedDate
+const selectedShifts = shifts.filter(
+  (shift) => shift.plan_date === selectedDate
+);
+
+const visibleShifts =
+  selectedGroup.type === 'all'
+    ? selectedShifts
+    : selectedShifts.filter((shift) => {
+        if (selectedGroup.type === 'department') {
+          return shift.department_id === selectedGroup.id;
+        }
+
+        if (selectedGroup.type === 'area') {
+          return shift.assignment_area_id === selectedGroup.id;
+        }
+
+        return true;
+      });
+
+const departmentOverview = departments.map((department) => {
+  const departmentShifts = selectedShifts.filter(
+    (shift) => shift.department_id === department.id
   );
+
+  const employeeIds = new Set(
+    departmentShifts.map((shift) => shift.employee_id)
+  );
+
+  return {
+    ...department,
+    shiftCount: departmentShifts.length,
+    employeeCount: employeeIds.size
+  };
+});
+
+const areaOverview = areas.map((area) => {
+  const areaShifts = selectedShifts.filter(
+    (shift) => shift.assignment_area_id === area.id
+  );
+
+  const employeeIds = new Set(
+    areaShifts.map((shift) => shift.employee_id)
+  );
+
+  return {
+    ...area,
+    shiftCount: areaShifts.length,
+    employeeCount: employeeIds.size
+  };
+});
 
   useEffect(() => {
     loadMasterData();
@@ -364,7 +416,14 @@ export default function SchedulePage() {
                     ? 'day-card selected'
                     : 'day-card'
                 }
-                onClick={() => setSelectedDate(dateString)}
+                onClick={() => {
+                setSelectedDate(dateString);
+                setSelectedGroup({
+                  type: 'all',
+                  id: null,
+                  name: 'Alle Bereiche'
+                });
+              }}
               >
                 <span>{formatDisplayDate(day)}</span>
                 <strong>{dayShifts.length}</strong>
@@ -374,12 +433,107 @@ export default function SchedulePage() {
           })}
         </div>
       </section>
+      <section className="content-card overview-card">
+  <div className="card-heading">
+    <div>
+      <p className="eyebrow">Besetzung</p>
+      <h3>Abteilungen und Einsatzbereiche</h3>
+      <p className="muted small-muted">
+        Klicken Sie auf einen Bereich, um die dort geplanten Mitarbeiter
+        anzuzeigen.
+      </p>
+    </div>
+  </div>
 
+  <div className="group-overview-grid">
+    <button
+      className={
+        selectedGroup.type === 'all'
+          ? 'group-overview-card selected'
+          : 'group-overview-card'
+      }
+      onClick={() =>
+        setSelectedGroup({
+          type: 'all',
+          id: null,
+          name: 'Alle Bereiche'
+        })
+      }
+    >
+      <span className="group-overview-label">Gesamt</span>
+      <strong>
+        {new Set(visibleShifts.map((shift) => shift.employee_id)).size}
+      </strong>
+      <small>Mitarbeiter</small>
+      <em>{visibleShifts.length} Schichten</em>
+    </button>
+
+    {departmentOverview.map((department) => (
+      <button
+        key={department.id}
+        className={
+          selectedGroup.type === 'department' &&
+          selectedGroup.id === department.id
+            ? 'group-overview-card selected'
+            : 'group-overview-card'
+        }
+        onClick={() =>
+          setSelectedGroup({
+            type: 'department',
+            id: department.id,
+            name: department.name
+          })
+        }
+      >
+        <span className="group-overview-label">
+          Abteilung
+        </span>
+
+        <strong>{department.employeeCount}</strong>
+        <small>Mitarbeiter</small>
+        <em>
+          {department.name} · {department.shiftCount} Schichten
+        </em>
+      </button>
+    ))}
+
+    {areaOverview.map((area) => (
+      <button
+        key={area.id}
+        className={
+          selectedGroup.type === 'area' &&
+          selectedGroup.id === area.id
+            ? 'group-overview-card selected'
+            : 'group-overview-card'
+        }
+        onClick={() =>
+          setSelectedGroup({
+            type: 'area',
+            id: area.id,
+            name: area.name
+          })
+        }
+      >
+        <span className="group-overview-label">
+          Einsatzbereich
+        </span>
+
+        <strong>{area.employeeCount}</strong>
+        <small>Mitarbeiter</small>
+        <em>
+          {area.name} · {area.shiftCount} Schichten
+        </em>
+      </button>
+    ))}
+  </div>
+</section>
       <section className="content-card">
         <div className="card-heading">
           <div>
             <p className="eyebrow">Tagesansicht</p>
             <h3>
+              <h3>
+              {selectedGroup.name} –{' '}
               {new Date(`${selectedDate}T12:00:00`).toLocaleDateString(
                 'de-DE',
                 {
@@ -389,6 +543,7 @@ export default function SchedulePage() {
                   year: 'numeric'
                 }
               )}
+            </h3>
             </h3>
           </div>
 
@@ -406,7 +561,7 @@ export default function SchedulePage() {
           </div>
         )}
 
-        {!loading && selectedShifts.length === 0 && (
+        {!loading && visibleShifts.length === 0 && (
           <div className="empty-state compact-empty">
             <div className="empty-icon">▦</div>
             <strong>Noch keine Schichten eingetragen</strong>
@@ -417,9 +572,9 @@ export default function SchedulePage() {
           </div>
         )}
 
-        {!loading && selectedShifts.length > 0 && (
+        {!loading && visibleShifts.length > 0 && (
           <div className="shift-list">
-            {selectedShifts.map((shift) => (
+            {visibleShifts.map((shift) => (
               <div className="shift-row" key={shift.id}>
                 <div className="shift-time">
                   <strong>
