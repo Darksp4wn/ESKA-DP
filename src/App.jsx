@@ -228,6 +228,156 @@ function LoginScreen() {
 }
 
 function Dashboard({ profile, onNavigate }) {
+  const [stats, setStats] = useState({
+    employees: 0,
+    scheduledEmployees: 0,
+    currentAbsences: 0,
+    overtimeMinutes: 0,
+    plannedMinutes: 0
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    loadDashboardStats();
+  }, []);
+
+  function getLocalDateKey() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function calculateShiftMinutes(start, end, breakMinutes = 0) {
+    if (!start || !end) return 0;
+
+    const [startHour, startMinute] = start.split(':').map(Number);
+    const [endHour, endMinute] = end.split(':').map(Number);
+
+    let minutes =
+      endHour * 60 +
+      endMinute -
+      (startHour * 60 + startMinute);
+
+    if (minutes < 0) {
+      minutes += 24 * 60;
+    }
+
+    return Math.max(0, minutes - Number(breakMinutes || 0));
+  }
+
+  async function loadDashboardStats() {
+    setLoading(true);
+    setError('');
+
+    const today = getLocalDateKey();
+
+    const [
+      employeesResult,
+      planResult,
+      absencesResult,
+      overtimeResult
+    ] = await Promise.all([
+      supabase
+        .from('employees')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_active', true),
+
+      supabase
+        .from('schedule_plans')
+        .select(`
+          id,
+          plan_date,
+          shifts (
+            id,
+            employee_id,
+            start_time,
+            end_time,
+            break_minutes
+          )
+        `)
+        .eq('plan_date', today)
+        .maybeSingle(),
+
+      supabase
+        .from('absences')
+        .select('employee_id')
+        .lte('start_date', today)
+        .gte('end_date', today),
+
+      supabase
+        .from('overtime_entries')
+        .select('minutes')
+    ]);
+
+    if (
+      employeesResult.error ||
+      planResult.error ||
+      absencesResult.error ||
+      overtimeResult.error
+    ) {
+      setError('Dashboard-Daten konnten nicht geladen werden.');
+      setLoading(false);
+      return;
+    }
+
+    const todayShifts = planResult.data?.shifts || [];
+
+    const uniqueScheduledEmployees = new Set(
+      todayShifts.map((shift) => shift.employee_id)
+    );
+
+    const uniqueAbsences = new Set(
+      (absencesResult.data || []).map((absence) => absence.employee_id)
+    );
+
+    const plannedMinutes = todayShifts.reduce(
+      (total, shift) =>
+        total +
+        calculateShiftMinutes(
+          shift.start_time,
+          shift.end_time,
+          shift.break_minutes
+        ),
+      0
+    );
+
+    const overtimeMinutes = (overtimeResult.data || []).reduce(
+      (total, entry) => total + Number(entry.minutes || 0),
+      0
+    );
+
+    setStats({
+      employees: employeesResult.count || 0,
+      scheduledEmployees: uniqueScheduledEmployees.size,
+      currentAbsences: uniqueAbsences.size,
+      overtimeMinutes,
+      plannedMinutes
+    });
+
+    setLoading(false);
+  }
+
+  function formatOvertime(minutes) {
+    const sign = minutes < 0 ? '-' : '+';
+    const absoluteMinutes = Math.abs(minutes);
+    const hours = Math.floor(absoluteMinutes / 60);
+    const remainingMinutes = absoluteMinutes % 60;
+
+    return `${sign}${hours}:${String(remainingMinutes).padStart(2, '0')}`;
+  }
+
+  function formatHours(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    return `${hours}:${String(remainingMinutes).padStart(2, '0')} Std.`;
+  }
+
   return (
     <>
       <div className="welcome-row">
@@ -237,7 +387,7 @@ function Dashboard({ profile, onNavigate }) {
             Guten Tag{profile?.first_name ? `, ${profile.first_name}` : ''}
           </h2>
           <p className="muted">
-            Hier sehen Sie die wichtigsten Informationen zum Dienstplan.
+            Hier sehen Sie die aktuellen Informationen zum Dienstplan.
           </p>
         </div>
 
@@ -249,11 +399,32 @@ function Dashboard({ profile, onNavigate }) {
         </button>
       </div>
 
+      {error && <div className="error-message page-message">{error}</div>}
+
       <div className="stats-grid">
-        <StatCard title="Mitarbeiter" value="0" detail="Noch keine Mitarbeiter angelegt" />
-        <StatCard title="Heutige Besetzung" value="–" detail="Noch keine Planung vorhanden" />
-        <StatCard title="Urlaub aktuell" value="0" detail="Keine Abwesenheiten eingetragen" />
-        <StatCard title="Überstunden" value="0:00" detail="Noch keine Konten vorhanden" />
+        <StatCard
+          title="Mitarbeiter"
+          value={loading ? '…' : stats.employees}
+          detail="Aktive Mitarbeiter"
+        />
+
+        <StatCard
+          title="Heutige Besetzung"
+          value={loading ? '…' : stats.scheduledEmployees}
+          detail="Mitarbeiter mit Schicht heute"
+        />
+
+        <StatCard
+          title="Urlaub / Abwesenheit"
+          value={loading ? '…' : stats.currentAbsences}
+          detail="Aktuell abwesende Mitarbeiter"
+        />
+
+        <StatCard
+          title="Überstunden"
+          value={loading ? '…' : formatOvertime(stats.overtimeMinutes)}
+          detail="Gesamtes Überstundenkonto"
+        />
       </div>
 
       <div className="dashboard-grid">
@@ -263,16 +434,35 @@ function Dashboard({ profile, onNavigate }) {
               <p className="eyebrow">Heute</p>
               <h3>Heutiger Dienstplan</h3>
             </div>
-            <button className="text-button" onClick={() => onNavigate('schedule')}>
+
+            <button
+              className="text-button"
+              onClick={() => onNavigate('schedule')}
+            >
               Öffnen
             </button>
           </div>
 
-          <div className="empty-state">
-            <div className="empty-icon">▦</div>
-            <strong>Noch kein Dienstplan vorhanden</strong>
-            <span>Erstellen Sie den ersten Dienstplan im Bereich „Dienstplan“.</span>
-          </div>
+          {loading ? (
+            <div className="loading-inline">
+              Dashboard wird geladen …
+            </div>
+          ) : stats.scheduledEmployees === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">▦</div>
+              <strong>Noch keine Schichten vorhanden</strong>
+              <span>
+                Für heute wurden noch keine Mitarbeiter eingeplant.
+              </span>
+            </div>
+          ) : (
+            <div className="dashboard-summary">
+              <strong>{stats.scheduledEmployees} Mitarbeiter eingeplant</strong>
+              <span>
+                Geplante Nettoarbeitszeit: {formatHours(stats.plannedMinutes)}
+              </span>
+            </div>
+          )}
         </section>
 
         <section className="content-card">
@@ -288,14 +478,17 @@ function Dashboard({ profile, onNavigate }) {
               <span>👥</span>
               Mitarbeiter verwalten
             </button>
+
             <button onClick={() => onNavigate('schedule')}>
               <span>▦</span>
               Dienstplan erstellen
             </button>
+
             <button onClick={() => onNavigate('absence')}>
               <span>◫</span>
               Urlaub eintragen
             </button>
+
             <button onClick={() => onNavigate('reports')}>
               <span>▥</span>
               Auswertungen öffnen
