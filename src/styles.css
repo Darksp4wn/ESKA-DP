@@ -829,3 +829,154 @@ td {
     width: 100%;
   }
 }
+.schedule-card {
+  margin-bottom: 22px;
+}
+
+.schedule-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 22px;
+  color: #354764;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+.day-card {
+  min-height: 92px;
+  padding: 13px 8px;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  color: #53647c;
+  background: #fbfcfe;
+  text-align: center;
+}
+
+.day-card:hover,
+.day-card.selected {
+  border-color: #1971b5;
+  color: #1971b5;
+  background: #eff7fc;
+}
+
+.day-card span,
+.day-card strong,
+.day-card small {
+  display: block;
+}
+
+.day-card span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.day-card strong {
+  margin-top: 8px;
+  font-size: 24px;
+}
+
+.day-card small {
+  margin-top: 2px;
+  color: #8a97aa;
+  font-size: 11px;
+}
+
+.shift-list {
+  display: grid;
+  gap: 10px;
+}
+
+.shift-row {
+  display: grid;
+  grid-template-columns: 155px 1fr 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 15px;
+  border: 1px solid #e2e9f2;
+  border-left: 4px solid #1971b5;
+  border-radius: 9px;
+  background: #fbfcfe;
+}
+
+.shift-time strong,
+.shift-time span,
+.shift-person strong,
+.shift-person span {
+  display: block;
+}
+
+.shift-time strong,
+.shift-person strong {
+  color: #273b5b;
+}
+
+.shift-time span,
+.shift-person span,
+.shift-note {
+  margin-top: 4px;
+  color: #7a899e;
+  font-size: 12px;
+}
+
+.delete-button {
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 10px;
+  color: #a12727;
+  background: #fff0f0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.delete-button:hover {
+  color: white;
+  background: #c43d3d;
+}
+
+.form-help {
+  margin: -8px 0 15px;
+  color: #7a899e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 850px) {
+  .week-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .shift-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .delete-button {
+    width: fit-content;
+  }
+}
+
+@media (max-width: 560px) {
+  .schedule-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .schedule-toolbar strong {
+    order: -1;
+    width: 100%;
+    text-align: center;
+  }
+
+  .week-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .shift-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
