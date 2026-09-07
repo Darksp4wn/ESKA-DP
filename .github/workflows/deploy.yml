@@ -27,10 +27,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+          cache: false
 
       - name: Abhängigkeiten installieren
-        run: npm ci
+        run: npm install
 
       - name: Anwendung bauen
         run: npm run build
