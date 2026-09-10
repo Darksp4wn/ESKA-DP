@@ -1395,3 +1395,441 @@ td {
   padding: 7px 10px;
   font-size: 12px;
 }
+
+.planner-page-heading {
+  align-items: center;
+}
+
+.planner-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.planner-filter-card {
+  margin-bottom: 22px;
+}
+
+.planner-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 15px;
+}
+
+.planner-filter-grid label {
+  display: grid;
+  gap: 7px;
+  color: #354764;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.planner-filter-grid select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #d5dfec;
+  border-radius: 8px;
+  outline: none;
+  color: #354764;
+  background: white;
+}
+
+.planner-filter-grid select:focus {
+  border-color: #1971b5;
+  box-shadow: 0 0 0 3px rgba(25, 113, 181, 0.13);
+}
+
+.clear-filter-button {
+  white-space: nowrap;
+}
+
+.selected-employee-banner {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #b8d7eb;
+  border-radius: 11px;
+  color: #31506c;
+  background: #eef8fd;
+}
+
+.selected-employee-avatar,
+.employee-quick-avatar {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: #1971b5;
+  font-weight: 800;
+}
+
+.selected-employee-avatar {
+  width: 45px;
+  height: 45px;
+  font-size: 15px;
+}
+
+.selected-employee-banner > div:nth-child(2) span,
+.selected-employee-banner > div:nth-child(2) strong {
+  display: block;
+}
+
+.selected-employee-banner > div:nth-child(2) span {
+  margin-bottom: 3px;
+  color: #6c8297;
+  font-size: 11px;
+}
+
+.selected-employee-banner > div:nth-child(2) strong {
+  color: #183b59;
+  font-size: 16px;
+}
+
+.selected-employee-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-left: auto;
+  color: #52708a;
+  font-size: 12px;
+}
+
+.employee-quick-select-card {
+  margin-bottom: 22px;
+}
+
+.employee-quick-select-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.employee-quick-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid #dfe7f1;
+  border-radius: 10px;
+  color: #354764;
+  background: #fbfcfe;
+  text-align: left;
+  transition: 0.2s ease;
+}
+
+.employee-quick-select:hover {
+  border-color: #1971b5;
+  background: #eef8fd;
+  transform: translateY(-1px);
+}
+
+.employee-quick-avatar {
+  width: 35px;
+  height: 35px;
+  font-size: 12px;
+}
+
+.employee-quick-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.employee-quick-text strong,
+.employee-quick-text small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.employee-quick-text strong {
+  color: #273b5b;
+  font-size: 13px;
+}
+
+.employee-quick-text small {
+  margin-top: 3px;
+  color: #7a899e;
+  font-size: 11px;
+}
+
+.employee-quick-arrow {
+  color: #1971b5;
+  font-size: 22px;
+}
+
+.planner-calendar-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.planner-calendar-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 25px;
+  border-bottom: 1px solid #e3eaf3;
+  background: white;
+}
+
+.planner-calendar-topline h3 {
+  margin: 4px 0 0;
+  color: #14213d;
+}
+
+.planner-current-period {
+  color: #71809a;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.professional-calendar-wrapper {
+  padding: 20px;
+  background: white;
+}
+
+.professional-calendar-wrapper .fc {
+  color: #354764;
+  font-family: inherit;
+}
+
+.professional-calendar-wrapper .fc-theme-standard td,
+.professional-calendar-wrapper .fc-theme-standard th {
+  border-color: #e2e9f2;
+}
+
+.professional-calendar-wrapper .fc .fc-toolbar {
+  margin-bottom: 20px;
+}
+
+.professional-calendar-wrapper .fc .fc-toolbar-title {
+  color: #14213d;
+  font-size: 20px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.professional-calendar-wrapper .fc .fc-button {
+  border: 1px solid #d5dfec;
+  color: #48617d;
+  background: white;
+  box-shadow: none;
+  font-weight: 700;
+}
+
+.professional-calendar-wrapper .fc .fc-button:hover,
+.professional-calendar-wrapper .fc .fc-button:focus {
+  border-color: #1971b5;
+  color: white;
+  background: #1971b5;
+  box-shadow: none;
+}
+
+.professional-calendar-wrapper .fc .fc-button-primary:not(:disabled).fc-button-active,
+.professional-calendar-wrapper .fc .fc-button-primary:not(:disabled):active {
+  border-color: #1971b5;
+  background: #1971b5;
+}
+
+.professional-calendar-wrapper .fc .fc-day-today {
+  background: #f0f8fd;
+}
+
+.professional-calendar-wrapper .fc .fc-col-header-cell {
+  padding: 9px 0;
+  background: #f7f9fc;
+}
+
+.professional-calendar-wrapper .fc .fc-col-header-cell-cushion {
+  color: #61738b;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  text-transform: capitalize;
+}
+
+.professional-calendar-wrapper .fc .fc-daygrid-day-number {
+  padding: 8px;
+  color: #53647c;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.professional-calendar-wrapper .fc .fc-daygrid-day-number:hover {
+  color: #1971b5;
+}
+
+.professional-calendar-wrapper .fc .fc-timegrid-slot-label {
+  color: #7d8ba0;
+  font-size: 11px;
+}
+
+.professional-calendar-wrapper .fc .fc-timegrid-axis-cushion {
+  color: #7d8ba0;
+  font-size: 11px;
+}
+
+.professional-calendar-wrapper .fc .fc-timegrid-slot {
+  height: 33px;
+}
+
+.professional-calendar-wrapper .fc-event {
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.professional-calendar-wrapper .fc-event:hover {
+  filter: brightness(0.94);
+}
+
+.professional-calendar-wrapper .planner-shift-event {
+  border-left: 3px solid rgba(255, 255, 255, 0.8);
+}
+
+.professional-calendar-wrapper .planner-absence-event {
+  border-radius: 5px;
+  opacity: 0.92;
+}
+
+.planner-event-content {
+  overflow: hidden;
+  padding: 2px 4px;
+  line-height: 1.25;
+}
+
+.planner-event-content strong,
+.planner-event-content span,
+.planner-event-content small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-event-content strong {
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.planner-event-content span {
+  margin-top: 2px;
+  font-size: 10px;
+}
+
+.planner-event-content small {
+  margin-top: 2px;
+  font-size: 9px;
+  opacity: 0.85;
+}
+
+.event-detail-modal {
+  width: min(510px, 100%);
+  padding: 25px;
+}
+
+.event-detail-list {
+  display: grid;
+  gap: 0;
+  margin-bottom: 22px;
+  border: 1px solid #e0e7f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.event-detail-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e7edf4;
+}
+
+.event-detail-list > div:last-child {
+  border-bottom: 0;
+}
+
+.event-detail-list span {
+  color: #7b899d;
+  font-size: 12px;
+}
+
+.event-detail-list strong {
+  color: #354764;
+  font-size: 13px;
+  text-align: right;
+}
+
+@media (max-width: 1050px) {
+  .planner-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .employee-quick-select-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .selected-employee-details {
+    margin-left: 0;
+  }
+
+  .selected-employee-banner {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 700px) {
+  .planner-filter-grid,
+  .employee-quick-select-list {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-calendar-topline {
+    display: block;
+  }
+
+  .planner-current-period {
+    display: block;
+    margin-top: 10px;
+  }
+
+  .professional-calendar-wrapper {
+    padding: 8px;
+  }
+
+  .professional-calendar-wrapper .fc .fc-toolbar {
+    display: block;
+  }
+
+  .professional-calendar-wrapper .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .professional-calendar-wrapper .fc .fc-toolbar-title {
+    font-size: 17px;
+  }
+
+  .professional-calendar-wrapper .fc .fc-button {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .selected-employee-banner {
+    align-items: flex-start;
+  }
+
+  .selected-employee-details {
+    width: 100%;
+    display: grid;
+    margin-left: 58px;
+  }
+}
