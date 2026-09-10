@@ -512,6 +512,7 @@ function EmployeesPage() {
   const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -520,50 +521,164 @@ function EmployeesPage() {
     loadMasterData();
   }, []);
 
+  function getWorkingDaysInPeriod(startDate, endDate) {
+    if (!startDate || !endDate) return 0;
+
+    const start = new Date(`${startDate}T12:00:00`);
+    const end = new Date(`${endDate}T12:00:00`);
+
+    if (end < start) return 0;
+
+    let days = 0;
+    const current = new Date(start);
+
+    while (current <= end) {
+      const weekday = current.getDay();
+
+      // Sonntag wird nicht gezählt.
+      if (weekday !== 0) {
+        days += 1;
+      }
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    return days;
+  }
+
+  function getVacationDaysForYear(absences, year) {
+    const yearStart = `${year}-01-01`;
+    const yearEnd = `${year}-12-31`;
+
+    return absences.reduce((total, absence) => {
+      const relevantStart =
+        absence.start_date > yearStart
+          ? absence.start_date
+          : yearStart;
+
+      const relevantEnd =
+        absence.end_date < yearEnd
+          ? absence.end_date
+          : yearEnd;
+
+      return (
+        total +
+        getWorkingDaysInPeriod(relevantStart, relevantEnd)
+      );
+    }, 0);
+  }
+
   async function loadEmployees() {
     setLoading(true);
     setError('');
 
-    const { data, error } = await supabase
-      .from('employees')
-      .select(`
-        id,
-        first_name,
-        last_name,
-        personnel_number,
-        email,
-        phone,
-        location,
-        employment_type,
-        weekly_hours,
-        contractual_monthly_hours,
-        entry_date,
-        exit_date,
-        qualifications,
-        work_time_model,
-        vacation_entitlement,
-        is_active,
-        employee_departments (
-          department:departments (
-            id,
-            name
-          )
-        ),
-        employee_assignment_areas (
-          assignment_area:assignment_areas (
-            id,
-            name
-          )
-        )
-      `)
-      .order('last_name', { ascending: true });
+    const currentYear = new Date().getFullYear();
+    const yearStart = `${currentYear}-01-01`;
+    const yearEnd = `${currentYear}-12-31`;
 
-    if (error) {
-      setError(`Mitarbeiter konnten nicht geladen werden: ${error.message}`);
-    } else {
-      setEmployees(data || []);
+    const [
+      employeesResult,
+      absencesResult
+    ] = await Promise.all([
+      supabase
+        .from('employees')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          personnel_number,
+          email,
+          phone,
+          location,
+          employment_type,
+          weekly_hours,
+          contractual_monthly_hours,
+          entry_date,
+          exit_date,
+          qualifications,
+          work_time_model,
+          vacation_entitlement,
+          is_active,
+          employee_departments (
+            department:departments (
+              id,
+              name
+            )
+          ),
+          employee_assignment_areas (
+            assignment_area:assignment_areas (
+              id,
+              name
+            )
+          )
+        `)
+        .order('last_name', { ascending: true }),
+
+      supabase
+        .from('absences')
+        .select(`
+          employee_id,
+          start_date,
+          end_date,
+          absence_type
+        `)
+        .eq('absence_type', 'urlaub')
+        .lte('start_date', yearEnd)
+        .gte('end_date', yearStart)
+    ]);
+
+    if (employeesResult.error) {
+      setError(
+        `Mitarbeiter konnten nicht geladen werden: ${employeesResult.error.message}`
+      );
+      setLoading(false);
+      return;
     }
 
+    if (absencesResult.error) {
+      setError(
+        `Urlaubsdaten konnten nicht geladen werden: ${absencesResult.error.message}`
+      );
+      setLoading(false);
+      return;
+    }
+
+    const absencesByEmployee = {};
+
+    (absencesResult.data || []).forEach((absence) => {
+      if (!absencesByEmployee[absence.employee_id]) {
+        absencesByEmployee[absence.employee_id] = [];
+      }
+
+      absencesByEmployee[absence.employee_id].push(absence);
+    });
+
+    const enrichedEmployees = (employeesResult.data || []).map(
+      (employee) => {
+        const employeeAbsences =
+          absencesByEmployee[employee.id] || [];
+
+        const vacationTaken = getVacationDaysForYear(
+          employeeAbsences,
+          currentYear
+        );
+
+        const vacationEntitlement = Number(
+          employee.vacation_entitlement || 0
+        );
+
+        return {
+          ...employee,
+          vacation_taken: vacationTaken,
+          vacation_remaining: Math.max(
+            0,
+            vacationEntitlement - vacationTaken
+          )
+        };
+      }
+    );
+
+    setEmployees(enrichedEmployees);
     setLoading(false);
   }
 
@@ -607,55 +722,58 @@ function EmployeesPage() {
       exit_date: formData.exit_date || null,
       qualifications: formData.qualifications.trim() || null,
       work_time_model: formData.work_time_model.trim() || null,
-      vacation_entitlement: Number(formData.vacation_entitlement) || 0,
+      vacation_entitlement:
+        Number(formData.vacation_entitlement) || 0,
       is_active: true
     };
 
-    const { data: employee, error: employeeError } = await supabase
-      .from('employees')
-      .insert(employeeData)
-      .select('id')
-      .single();
+    const { data: employee, error: employeeError } =
+      await supabase
+        .from('employees')
+        .insert(employeeData)
+        .select('id')
+        .single();
 
     if (employeeError) {
-      setError(`Mitarbeiter konnte nicht angelegt werden: ${employeeError.message}`);
+      setError(
+        `Mitarbeiter konnte nicht angelegt werden: ${employeeError.message}`
+      );
       return false;
     }
 
     if (formData.department_ids.length > 0) {
-      const departmentRows = formData.department_ids.map((departmentId, index) => ({
-        employee_id: employee.id,
-        department_id: departmentId,
-        is_primary: index === 0
-      }));
-
       const { error: departmentError } = await supabase
         .from('employee_departments')
-        .insert(departmentRows);
+        .insert(
+          formData.department_ids.map((departmentId, index) => ({
+            employee_id: employee.id,
+            department_id: departmentId,
+            is_primary: index === 0
+          }))
+        );
 
       if (departmentError) {
-        await supabase
-          .from('employees')
-          .delete()
-          .eq('id', employee.id);
-
-        setError(`Abteilungen konnten nicht gespeichert werden: ${departmentError.message}`);
+        setError(
+          `Abteilungen konnten nicht gespeichert werden: ${departmentError.message}`
+        );
         return false;
       }
     }
 
     if (formData.area_ids.length > 0) {
-      const areaRows = formData.area_ids.map((areaId) => ({
-        employee_id: employee.id,
-        assignment_area_id: areaId
-      }));
-
       const { error: areaError } = await supabase
         .from('employee_assignment_areas')
-        .insert(areaRows);
+        .insert(
+          formData.area_ids.map((areaId) => ({
+            employee_id: employee.id,
+            assignment_area_id: areaId
+          }))
+        );
 
       if (areaError) {
-        setError(`Einsatzbereiche konnten nicht gespeichert werden: ${areaError.message}`);
+        setError(
+          `Einsatzbereiche konnten nicht gespeichert werden: ${areaError.message}`
+        );
         return false;
       }
     }
@@ -663,6 +781,84 @@ function EmployeesPage() {
     setSuccess('Mitarbeiter wurde erfolgreich angelegt.');
     setShowForm(false);
     await loadEmployees();
+
+    return true;
+  }
+
+  async function updateEmployee(employeeId, formData) {
+    setError('');
+    setSuccess('');
+
+    const employeeData = {
+      first_name: formData.first_name.trim(),
+      last_name: formData.last_name.trim(),
+      personnel_number: formData.personnel_number.trim(),
+      email: formData.email.trim() || null,
+      phone: formData.phone.trim() || null,
+      location: formData.location.trim() || 'Standort 1',
+      employment_type: formData.employment_type,
+      weekly_hours: Number(formData.weekly_hours) || 0,
+      contractual_monthly_hours:
+        formData.contractual_monthly_hours
+          ? Number(formData.contractual_monthly_hours)
+          : null,
+      entry_date: formData.entry_date || null,
+      exit_date: formData.exit_date || null,
+      qualifications: formData.qualifications.trim() || null,
+      work_time_model: formData.work_time_model.trim() || null,
+      vacation_entitlement:
+        Number(formData.vacation_entitlement) || 0
+    };
+
+    const { error: updateError } = await supabase
+      .from('employees')
+      .update(employeeData)
+      .eq('id', employeeId);
+
+    if (updateError) {
+      setError(
+        `Mitarbeiter konnte nicht geändert werden: ${updateError.message}`
+      );
+      return false;
+    }
+
+    await supabase
+      .from('employee_departments')
+      .delete()
+      .eq('employee_id', employeeId);
+
+    if (formData.department_ids.length > 0) {
+      await supabase
+        .from('employee_departments')
+        .insert(
+          formData.department_ids.map((departmentId, index) => ({
+            employee_id: employeeId,
+            department_id: departmentId,
+            is_primary: index === 0
+          }))
+        );
+    }
+
+    await supabase
+      .from('employee_assignment_areas')
+      .delete()
+      .eq('employee_id', employeeId);
+
+    if (formData.area_ids.length > 0) {
+      await supabase
+        .from('employee_assignment_areas')
+        .insert(
+          formData.area_ids.map((areaId) => ({
+            employee_id: employeeId,
+            assignment_area_id: areaId
+          }))
+        );
+    }
+
+    setSuccess('Mitarbeiter wurde erfolgreich aktualisiert.');
+    setEditingEmployee(null);
+    await loadEmployees();
+
     return true;
   }
 
@@ -673,7 +869,7 @@ function EmployeesPage() {
           <p className="eyebrow">Personal</p>
           <h2>Mitarbeiter</h2>
           <p className="muted">
-            Mitarbeiterdaten, Abteilungen und Arbeitszeitmodelle verwalten.
+            Mitarbeiterdaten, Abteilungen, Einsatzbereiche und Urlaub.
           </p>
         </div>
 
@@ -689,26 +885,15 @@ function EmployeesPage() {
         </button>
       </div>
 
-      {success && <div className="success-message">{success}</div>}
-      {error && <div className="error-message page-message">{error}</div>}
+      {success && (
+        <div className="success-message">{success}</div>
+      )}
 
-      <div className="stats-grid small">
-        <StatCard
-          title="Mitarbeiter gesamt"
-          value={employees.length}
-          detail="Aktuelle Datenbank"
-        />
-        <StatCard
-          title="Abteilungen"
-          value={departments.length}
-          detail="Haka bis Lederwaren"
-        />
-        <StatCard
-          title="Einsatzbereiche"
-          value={areas.length}
-          detail="Hausmeister und Putzkräfte"
-        />
-      </div>
+      {error && (
+        <div className="error-message page-message">
+          {error}
+        </div>
+      )}
 
       <section className="content-card">
         <div className="card-heading">
@@ -717,14 +902,17 @@ function EmployeesPage() {
             <h3>Mitarbeiterübersicht</h3>
           </div>
 
-          <button className="secondary-button" onClick={loadEmployees}>
+          <button
+            className="secondary-button"
+            onClick={loadEmployees}
+          >
             Aktualisieren
           </button>
         </div>
 
         {loading && (
           <div className="loading-inline">
-            Mitarbeiter werden geladen …
+            Mitarbeiterdaten werden geladen …
           </div>
         )}
 
@@ -733,7 +921,7 @@ function EmployeesPage() {
             <div className="empty-icon">👥</div>
             <strong>Noch keine Mitarbeiter angelegt</strong>
             <span>
-              Legen Sie den ersten Mitarbeiter über die Schaltfläche oben an.
+              Legen Sie über die Schaltfläche oben einen Mitarbeiter an.
             </span>
           </div>
         )}
@@ -748,9 +936,11 @@ function EmployeesPage() {
                   <th>Abteilungen</th>
                   <th>Einsatzbereiche</th>
                   <th>Beschäftigung</th>
-                  <th>Wochenstunden</th>
-                  <th>Urlaub</th>
-                  <th>Status</th>
+                  <th>Stunden</th>
+                  <th>Anspruch</th>
+                  <th>Genommen</th>
+                  <th>Resturlaub</th>
+                  <th>Aktion</th>
                 </tr>
               </thead>
 
@@ -761,6 +951,7 @@ function EmployeesPage() {
                       <strong>
                         {employee.first_name} {employee.last_name}
                       </strong>
+
                       {employee.email && (
                         <small className="table-subline">
                           {employee.email}
@@ -776,32 +967,49 @@ function EmployeesPage() {
                             .map((item) => item.department?.name)
                             .filter(Boolean)
                             .join(', ')
-                        : '–'}
+                        : 'Keine Abteilung'}
                     </td>
 
                     <td>
                       {employee.employee_assignment_areas?.length > 0
                         ? employee.employee_assignment_areas
-                            .map((item) => item.assignment_area?.name)
+                            .map(
+                              (item) =>
+                                item.assignment_area?.name
+                            )
                             .filter(Boolean)
                             .join(', ')
                         : '–'}
                     </td>
 
-                    <td>{formatEmploymentType(employee.employment_type)}</td>
-                    <td>{employee.weekly_hours} Stunden</td>
+                    <td>
+                      {formatEmploymentType(
+                        employee.employment_type
+                      )}
+                    </td>
+
+                    <td>{employee.weekly_hours} Std.</td>
+
                     <td>{employee.vacation_entitlement} Tage</td>
 
+                    <td>{employee.vacation_taken} Tage</td>
+
                     <td>
-                      <span
-                        className={
-                          employee.is_active
-                            ? 'status active'
-                            : 'status inactive'
-                        }
+                      <strong className="remaining-vacation">
+                        {employee.vacation_remaining} Tage
+                      </strong>
+                    </td>
+
+                    <td>
+                      <button
+                        className="secondary-button table-action-button"
+                        onClick={() => {
+                          setEditingEmployee(employee);
+                          setShowForm(false);
+                        }}
                       >
-                        {employee.is_active ? 'Aktiv' : 'Archiviert'}
-                      </span>
+                        Bearbeiten
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -813,34 +1021,64 @@ function EmployeesPage() {
 
       {showForm && (
         <EmployeeFormModal
+          key="new-employee"
+          employee={null}
           departments={departments}
           areas={areas}
           onClose={() => setShowForm(false)}
           onSubmit={createEmployee}
         />
       )}
+
+      {editingEmployee && (
+        <EmployeeFormModal
+          key={editingEmployee.id}
+          employee={editingEmployee}
+          departments={departments}
+          areas={areas}
+          onClose={() => setEditingEmployee(null)}
+          onSubmit={updateEmployee}
+        />
+      )}
     </>
   );
 }
 
-function EmployeeFormModal({ departments, areas, onClose, onSubmit }) {
-  const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    personnel_number: '',
-    email: '',
-    phone: '',
-    location: 'Standort 1',
-    employment_type: 'vollzeit',
-    weekly_hours: '40',
-    contractual_monthly_hours: '',
-    entry_date: '',
-    exit_date: '',
-    qualifications: '',
-    work_time_model: '',
-    vacation_entitlement: '30',
-    department_ids: [],
-    area_ids: []
+function EmployeeFormModal({
+  employee,
+  departments,
+  areas,
+  saving,
+  onClose,
+  onSubmit
+}) {
+
+const [formData, setFormData] = useState({
+  first_name: employee?.first_name || '',
+  last_name: employee?.last_name || '',
+  personnel_number: employee?.personnel_number || '',
+  email: employee?.email || '',
+  phone: employee?.phone || '',
+  location: employee?.location || 'Standort 1',
+  employment_type: employee?.employment_type || 'vollzeit',
+  weekly_hours: employee?.weekly_hours || 40,
+  contractual_monthly_hours:
+    employee?.contractual_monthly_hours || '',
+  entry_date: employee?.entry_date || '',
+  exit_date: employee?.exit_date || '',
+  qualifications: employee?.qualifications || '',
+  work_time_model: employee?.work_time_model || '',
+  vacation_entitlement:
+    employee?.vacation_entitlement || 30,
+  department_ids:
+    employee?.employee_departments
+      ?.map((item) => item.department?.id)
+      .filter(Boolean) || [],
+  area_ids:
+    employee?.employee_assignment_areas
+      ?.map((item) => item.assignment_area?.id)
+      .filter(Boolean) || []
+});
   });
 
   const [saving, setSaving] = useState(false);
@@ -888,7 +1126,9 @@ function EmployeeFormModal({ departments, areas, onClose, onSubmit }) {
     }
 
     setSaving(true);
-    const success = await onSubmit(formData);
+    const success = employee
+  ? await onSubmit(employee.id, formData)
+  : await onSubmit(formData);
     setSaving(false);
 
     if (!success) {
@@ -905,7 +1145,11 @@ function EmployeeFormModal({ departments, areas, onClose, onSubmit }) {
         <div className="modal-header">
           <div>
             <p className="eyebrow">Personalverwaltung</p>
-            <h3>Mitarbeiter anlegen</h3>
+            <h3>
+            {employee
+              ? 'Mitarbeiter bearbeiten'
+              : 'Mitarbeiter anlegen'}
+          </h3>
           </div>
 
           <button className="modal-close" onClick={onClose}>
@@ -1133,7 +1377,11 @@ function EmployeeFormModal({ departments, areas, onClose, onSubmit }) {
               className="primary-button"
               disabled={saving}
             >
-              {saving ? 'Speichern …' : 'Mitarbeiter speichern'}
+              {saving
+              ? 'Speichern …'
+              : employee
+                ? 'Änderungen speichern'
+                : 'Mitarbeiter speichern'}
             </button>
           </div>
         </form>
