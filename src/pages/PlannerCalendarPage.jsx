@@ -6,10 +6,6 @@ import interactionPlugin from '@fullcalendar/interaction';
 import deLocale from '@fullcalendar/core/locales/de';
 import { supabase } from '../lib/supabase';
 
-import '@fullcalendar/core/index.css';
-import '@fullcalendar/daygrid/index.css';
-import '@fullcalendar/timegrid/index.css';
-
 const absenceLabels = {
   urlaub: 'Urlaub',
   krankheit: 'Krankheit',
