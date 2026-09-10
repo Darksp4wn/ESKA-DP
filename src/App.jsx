@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
-import SchedulePage from './pages/SchedulePage';
 import AbsencePage from './pages/AbsencePage';
 import AbsenceCalendarPage from './pages/AbsenceCalendarPage';
+import PlannerCalendarPage from './pages/PlannerCalendarPage';
 
 const navigation = [
   { id: 'dashboard', label: 'Dashboard', icon: '⌂' },
@@ -142,7 +142,7 @@ function App() {
 
           {activePage === 'employees' && <EmployeesPage />}
           {activePage === 'absence-calendar' && <AbsenceCalendarPage />}
-          {activePage === 'schedule' && <SchedulePage />}
+          {activePage === 'schedule' && <PlannerCalendarPage />}
           {activePage === 'absence' && <AbsencePage />}
 
           {activePage !== 'dashboard' &&
