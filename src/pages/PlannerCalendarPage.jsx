@@ -97,7 +97,7 @@ function getAreaNames(employee) {
     .filter(Boolean);
 }
 
-function PlannerCalendarPage() {
+export default function PlannerCalendarPage() {
   const [employees, setEmployees] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [areas, setAreas] = useState([]);
@@ -888,4 +888,3 @@ function EventDetailModal({
     </div>
   );
 }
-export default PlannerCalendarPage;
