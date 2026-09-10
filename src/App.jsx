@@ -1079,7 +1079,6 @@ const [formData, setFormData] = useState({
       ?.map((item) => item.assignment_area?.id)
       .filter(Boolean) || []
 });
-  });
 
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
