@@ -1080,7 +1080,6 @@ const [formData, setFormData] = useState({
       .filter(Boolean) || []
 });
 
-  const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
   function updateField(event) {
