@@ -1385,3 +1385,13 @@ td {
     display: none;
   }
 }
+
+.remaining-vacation {
+  color: #1971b5;
+  white-space: nowrap;
+}
+
+.table-action-button {
+  padding: 7px 10px;
+  font-size: 12px;
+}
