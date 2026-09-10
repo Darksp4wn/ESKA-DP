@@ -499,7 +499,7 @@ export default function PlannerCalendarPage() {
               {departments.map((department) => (
                 <option
                   key={department.id}
-                  value={department.name}
+                  value={department.id}
                 >
                   {department.name}
                 </option>
@@ -521,7 +521,7 @@ export default function PlannerCalendarPage() {
               {areas.map((area) => (
                 <option
                   key={area.id}
-                  value={area.name}
+                  value={area.id}
                 >
                   {area.name}
                 </option>
@@ -675,7 +675,33 @@ export default function PlannerCalendarPage() {
                 minute: '2-digit',
                 hour12: false
               }}
-              events={calendarEvents}
+              events={calendarEvents.filter((event) => {
+  const props = event.extendedProps || {};
+
+  const matchesEmployee =
+    !selectedEmployeeId ||
+    props.employeeId === selectedEmployeeId;
+
+  const matchesDepartment =
+    !selectedDepartmentId ||
+    props.departmentName ===
+      departments.find(
+        (department) => department.id === selectedDepartmentId
+      )?.name;
+
+  const matchesArea =
+    !selectedAreaId ||
+    props.areaName ===
+      areas.find(
+        (area) => area.id === selectedAreaId
+      )?.name;
+
+  return (
+    matchesEmployee &&
+    matchesDepartment &&
+    matchesArea
+  );
+})}
               datesSet={handleDatesSet}
               eventClick={handleEventClick}
               eventClassNames={(eventInfo) => {
